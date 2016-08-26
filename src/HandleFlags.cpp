@@ -16,6 +16,8 @@ std::string HandleFlags::pedfile;
 std::string HandleFlags::bmidfile;
 std::string HandleFlags::ibdfile;
 std::string HandleFlags::outfile;
+bool HandleFlags::reduced;
+bool HandleFlags::silent;
 double HandleFlags::trim;
 int HandleFlags::windowsize;
 
@@ -28,6 +30,10 @@ int HandleFlags::setFlagValues(int argc,char *argv[]){
 	bool ibdflag = false;
 	bool winflag = false;
 	bool outflag = false;
+	bool trimflag = false;
+	reduced = false;
+	silent = false;
+
 
 		for (int i=1;i<argc;i++)
 			{
@@ -56,9 +62,18 @@ int HandleFlags::setFlagValues(int argc,char *argv[]){
 					outfile = argv[++i];
 					outflag = true;
 					}
-				else if (strcmp("-trim",argv[i]) == 0)
+				else if (strcmp("-emp_ma_threshold",argv[i]) == 0)//also called -trim
 					{
 					trim = atof(argv[++i]);
+					trimflag = true;
+					}
+				else if (strcmp("-reduced",argv[i]) == 0)
+					{
+					reduced = true;
+					}
+				else if (strcmp("-silent",argv[i]) == 0)
+					{
+					silent = true;
 					}
 				else
 					{
@@ -67,7 +82,7 @@ int HandleFlags::setFlagValues(int argc,char *argv[]){
 					}
 			}
 
-		if (!(pedflag	&&	bmidflag	&&	ibdflag  &&  winflag  &&  outflag	&&	trim))
+		if (!(pedflag	&&	bmidflag	&&	ibdflag  &&  winflag  &&  outflag	&&	trimflag))
 		{
 			std::cerr<<"flag missing.. Program is exiting";
 			exit(0);
@@ -111,4 +126,13 @@ int HandleFlags::getwindowsize()
 	return windowsize;
 }
 
+bool HandleFlags::getisreduced()
+{
+	return reduced;
+}
+
+bool HandleFlags::getissilent()
+{
+	return silent;
+}
 

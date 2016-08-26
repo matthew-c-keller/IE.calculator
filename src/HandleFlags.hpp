@@ -16,6 +16,8 @@ private:
 	static std::string bmidfile;
 	static std::string ibdfile;
 	static std::string outfile;
+	static bool reduced;
+	static bool silent;
 	static double trim;
 	static int windowsize;
 
@@ -29,6 +31,8 @@ public:
 	std::string getoutputfilename();
 	double gettrimvalue();			// get the trim flag value
 	int getwindowsize();
+	bool getisreduced();
+	bool getissilent();
 };
 
 

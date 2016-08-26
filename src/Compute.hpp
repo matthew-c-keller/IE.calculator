@@ -35,11 +35,14 @@ private:
 
 	unsigned long long len_left;	//To compute the left of column 4 of map
 	unsigned long long len_right;	//To compute the right of column 4 of map
+	//unsigned long long len_left_right;
 
 	bool nomatchestrim;
 	std::vector <Ibd> IBD;
 	std::vector <Bmid> BMID;
 	std::vector <Ped> PED;
+	bool isreduced;
+	bool issilent;
 
 
 public:
@@ -50,9 +53,11 @@ public:
 	void compute_ma_ie(unsigned long long,unsigned long long,unsigned long long,int,unsigned long long,std::string,std::string);
 	void compute_ma_nm(unsigned long long,unsigned long long,unsigned long long,int,unsigned long long,std::string,std::string);
 	void compute_ma_het(unsigned long long,unsigned long long,unsigned long long,int,unsigned long long,std::string );
-	void compute_pie_trim();
+	void compute_pie_trim2();
 	void compute_trim_ie(double trim);
+	void compute_trim_ie2 (double trim);
 	void compute_left_right(unsigned long long,	unsigned long long );
+	void compute_left_right2(unsigned long long,	unsigned long long );
 
 
 

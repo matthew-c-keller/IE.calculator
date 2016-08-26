@@ -16,10 +16,14 @@ The above file extention must end with .ibd,.bmid,.ped for sanity usuage purpose
 
 All the 6 flags must be used. 
   
-./IeCalculator -ped ./src/small.ped -bmid ./src/small.bmid -ibd ./src/small.ibd -emp_ma_threshold 0.5 -reduced -window 5 -out small.txts
+./IE_Calculator -ped ./src/small.ped -bmid ./src/small.bmid -ibd ./src/small.ibd -emp_ma_threshold 0.5 -reduced -window 5 -out small.txts
+
+
+
 
 OPTIONAL FLAGS:
 7. -reduced  :Outputs Columns 1-5,13-15
+8. -silent  :No data is shown in the screen. Supresses all output to screen.
 
 
 

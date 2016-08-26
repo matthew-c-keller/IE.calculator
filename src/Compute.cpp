@@ -22,6 +22,8 @@ Compute::Compute()
 Compute::Compute(HandleFlags hf,ReadFiles rf)
 {
 
+	issilent = hf.getissilent();
+
 	fpedfile.open(hf.getpedfilename().c_str());	//connect pedfile to filestream
 	fbmidfile.open(hf.getbmidfilename().c_str());	//connect bmidfile to file stream
 	fibdfile.open(hf.getibdfilename().c_str());	//connect ibdfile to file stream
@@ -39,13 +41,15 @@ Compute::Compute(HandleFlags hf,ReadFiles rf)
 	convertPedtovec();
 	//std::cout<<hf.getwindowsize()<<std::endl;
 	nomatchestrim = false;// if there are no matches in trim function
-
+	isreduced = hf.getisreduced();	//aif reduce parameters is on
 
 }
 
 void Compute::convertIBDtovec(std::string ibdfn)
 {
+	if (!issilent){
 	std::cout<<"Converting IBD to Vector"<<std::endl;
+	}
 	std::string line;
 	std::stringstream ss;
 	Ibd populate;	//Placeholder for creating object and populating values
@@ -95,7 +99,9 @@ void Compute::convertIBDtovec(std::string ibdfn)
 }
 void Compute::convertBmidtovec()
 {
+	if (!issilent){
 	std::cout<<"Converting Bmid to Vector"<<std::endl;
+	}
 	std::string line;
 	std::stringstream ss;
 	Bmid populate;	//Placeholder for creating object and populating values
@@ -125,7 +131,9 @@ void Compute::convertBmidtovec()
 }
 void Compute::convertPedtovec()
 {
+	if (!issilent){
 	std::cout<<"Converting Ped to Vector"<<std::endl;
+	}
 	std::string line;
 	std::string individual;
 	std::string dnaseq;
@@ -139,7 +147,14 @@ void Compute::convertPedtovec()
 			individual = populate.individual;
 			ss>>populate.individual>>populate.individual>>populate.individual>>populate.individual;
 			getline(ss,dnaseq,'\n');
-			dnaseq.erase(			std::remove(dnaseq.begin(), dnaseq.end(), '\t'), dnaseq.end()		);	//Debunk this
+			//std::cout<<dnaseq<<std::endl;
+			//dnaseq.erase(			std::remove(dnaseq.begin(), dnaseq.end(), '\t'), dnaseq.end()		);	//Debunk this
+
+
+			dnaseq.erase(std::remove_if(dnaseq.begin(), dnaseq.end(), isspace), dnaseq.end());
+
+
+			//std::cout<<dnaseq<<std::endl;
 			PED.push_back(Ped(individual,dnaseq));
 			ss.str("");
 			ss.clear();
@@ -163,7 +178,10 @@ void Compute::convertPedtovec()
 }
 void Compute::firstpass(std::string ibdfilename,std::string bmidfilename)
 {
+	if (!issilent){
 	std::cout<<"optimizing ibdfile"<<std::endl;
+	}
+
 	std::string ibdfilename_modified = ibdfilename+"_modified";
 	std::ofstream fibdfile_modified(ibdfilename_modified.c_str());
 	if (!fibdfile_modified.is_open())
@@ -235,16 +253,33 @@ void Compute::compute_ma_ie(unsigned long long index,unsigned long long st,unsig
 	//std::cout<<index <<"\t"<<st<<"\t"<<en<<"\t"<<winsize<<"\t"<<atmostdnalength<<"\t"<<person1<<"\t"<<person2<<"\t";
 	unsigned long long pedind1 = 0;
 	unsigned long long pedind2 = 0;
-	bool flag = false;
+	//bool flag = false;
+	//std::cout<<"person1="<<person1<<std::endl;
+	//std::cout<<"person2="<<person2<<std::endl;
+
+
 	for (unsigned long long i = 0;i< PED.size();i++ )
 		{
-			if (strcmp(PED[i].individual.c_str(), person1.c_str()) == 0 && !flag)
+			//std::cout<<"BEFORE---PED[i].individual"<<PED[i].individual<<std::endl;
+			//std::cout<<"BEFORE---person1"<<person1<<std::endl;
+			if (strcmp(PED[i].individual.c_str(), person1.c_str()) == 0 )
 				{
+					//std::cout<<"PED[i].individual"<<PED[i].individual<<std::endl;
+					//std::cout<<"person1"<<person1<<std::endl;
 					pedind1 = i;
-					flag = true;
+					break;
+					//flag = true;
 				}
-			if (strcmp(PED[i].individual.c_str(), person2.c_str()) == 0 && flag)
+		}
+	for (unsigned long long i = 0;i< PED.size();i++ )
+		{
+			//std::cout<<"BEFORE---PED[i].individual"<<PED[i].individual<<std::endl;
+			//std::cout<<"BEFORE---person1"<<person1<<std::endl;
+
+			if (strcmp(PED[i].individual.c_str(), person2.c_str()) == 0 )
 				{
+					//std::cout<<"PED[i].individual"<<PED[i].individual<<std::endl;
+					//std::cout<<"person2"<<person2<<std::endl;
 					pedind2 = i;
 					break;
 				}
@@ -298,6 +333,7 @@ void Compute::compute_ma_ie(unsigned long long index,unsigned long long st,unsig
 				}//if closed
 		}	//For loop closed
 
+	//std::cout<<"error = "<<verr.size()/(en - st +1.0)<<std::endl;
 	foutfile<<	verr.size()/(en - st +1.0)<<"\t";
 
 	/*std::cout<<(st*2)<<"\t"<<en*2 <<"\t"<<atmostdnalength<<std::endl;
@@ -391,15 +427,21 @@ void Compute::compute_ma_ie(unsigned long long index,unsigned long long st,unsig
 
 			if (!(i == start))
 				{
-					foutfile<<"/";
-					foutfile<<error_ie/winsize;
+					if (!isreduced)
+					{
+						foutfile<<"/";
+						foutfile<<error_ie/winsize;
+					}
 					ie.push_back(error_ie/winsize);	//contains the sequence for ma_ie pushing  into the trim vector for later calculation for  pie_trim, left, right, trim_ie
 					//std::cout<<error_ie/winsize<<std::endl;
 					error_ie = 0.0;
 				}
 			else
 				{
-					foutfile<<error_ie/winsize;
+					if (!isreduced)
+					{
+						foutfile<<error_ie/winsize;
+					}
 					ie.push_back(error_ie/winsize);//contains the sequence for ma_ie pushing  into the trim vector for later calculation for  pie_trim, left, right, trim_ie
 					//std::cout<<error_ie/winsize<<std::endl;
 					error_ie = 0.0;
@@ -409,7 +451,10 @@ void Compute::compute_ma_ie(unsigned long long index,unsigned long long st,unsig
 			error_ie = 0.0;
 
 		}
-		foutfile<<"\t";
+	if (!isreduced)
+		{
+			foutfile<<"\t";
+		}
 }
 
 
@@ -660,7 +705,7 @@ void Compute::compute_ma_het(unsigned long long index,unsigned long long st,unsi
 }
 
 
-void Compute::compute_pie_trim()	//uses only trim_ie vector, don't clear the vector values since we need to calculate 3 more columns i.e. left right and trim_ie
+void Compute::compute_pie_trim2()	//uses only trim_ie vector, don't clear the vector values since we need to calculate 3 more columns i.e. left right and trim_ie
 {
 if (nomatchestrim == false)
 {
@@ -681,14 +726,14 @@ else
 }
 }
 
-void Compute::compute_trim_ie(double trim)	// print its value in compute_pie_trim to conform the order of output
+/*void Compute::compute_trim_ie(double trim)	// print its value in compute_pie_trim to conform the order of output
 {
 	len_left = 0;	//To compute the left of column 4 of map; how many past the ma_ie did the trim start
 	len_right = 0;	//To compute the left of column 4 of map; how many past the ma_ie did the trim end, it tells us how many contigeous matches is happening
 	bool cstart = false;	//continuous sequence start
 	for(std::vector<double>::iterator it = ie.begin(); it != ie.end(); ++it)
 	{
-	    /* std::cout << *it; ... */
+	     std::cout << *it; ...
 		if ((*it) <= trim)
 		{
 			cstart = true;
@@ -722,34 +767,131 @@ void Compute::compute_trim_ie(double trim)	// print its value in compute_pie_tri
 		foutfile<<"\t";
 		foutfile<<"NA";
 	}
+}*/
+void Compute::compute_trim_ie2(double trim)	// print its value in compute_pie_trim to conform the order of output
+{
+	len_left = 0;	//To compute the left of column 4 of map; how many past the ma_ie did the trim start
+	len_right = 0;	//To compute the left of column 4 of map; how many past the ma_ie did the trim end, it tells us how many contigeous matches is happening
+	//len_left_right = 0;
+	bool cstart = false;	//continuous sequence start
+	std::vector<double>::const_reverse_iterator itb = ie.rbegin() + ie.size()/2;
+	std::vector<double>::iterator itf;
+	if ((ie.size() %2) == 0)
+			itf = ie.begin() + ie.size()/2;
+	else
+			itf = (ie.begin()+1) + (ie.size()/2);
 
+	for(;itb != ie.rend(); itb++)
+		{
+			if ((*itb) <= trim )
+				{
+					trim_ie.push_back(*itb);
+					len_left++;
+				}
+			else
+				break;
+		}
+	std::reverse(trim_ie.begin(),trim_ie.end());
+
+	for(;itf != ie.end(); itf++)
+	    {
+			if ((*itf) <= trim )
+				{
+					trim_ie.push_back(*itf);
+					len_right++;
+				}
+			else
+				break;
+	    }
+	//print compute trim of trim_ie i.e. PIE_TRIM
+
+/*	for (std::vector<double>::iterator z = ie.begin(); z != ie.end(); ++z)
+		{
+			std::cout<<(*z)<<" ";
+		}
+	std::cout<<std::endl;
+	for (std::vector<double>::iterator z = trim_ie.begin(); z != trim_ie.end(); ++z)
+		{
+			std::cout<<(*z)<<" ";
+		}
+	std::cout<<std::endl;
+	std::cout<<"ie size = "<<ie.size()<<std::endl;
+	std::cout<<"trim ie size = "<<trim_ie.size()<<std::endl;*/
+
+
+
+
+	if (len_left != 0 || len_right!=0 )
+		nomatchestrim = false;
+	else
+		nomatchestrim = true;
+
+	if (nomatchestrim == false)
+		{
+		if (!isreduced)
+		{
+			foutfile<<"\t";
+		}
+			foutfile<<std::accumulate( trim_ie.begin(), trim_ie.end(), 0.0)/trim_ie.size();	//accumulate used numeric.h
+		}
+	else
+		{
+
+		if (!isreduced)
+		{
+			foutfile<<"\t";
+		}
+			foutfile<<"NA";
+		}
 }
 
 
-
-void Compute::compute_left_right(unsigned long long st, unsigned long long en)
+void Compute::compute_left_right2(unsigned long long st, unsigned long long en)
 {
 
-if (nomatchestrim == false)
-{
-	foutfile<<"\t";
-	foutfile<<BMID[st+len_left].location;
-	foutfile<<"\t";
-	foutfile<<BMID[st+len_left+len_right-1].location;
+	if (nomatchestrim == false)
+		{
+			//std::cout<<st<<std::endl;
+
+			foutfile<<"\t";
+			//foutfile<<BMID[st+len_left].location;
+			foutfile<<BMID[((st+en)/2)-len_left + 1].location;
+
+			//std::cout<<BMID[st+len_left].location<<std::endl;
+			/*std::cout<<BMID[st].location<<std::endl;
+			std::cout<<BMID[en].location<<std::endl;
+
+			std::cout<<BMID[((st+en)/2)-len_left + 1].location<<std::endl;
+			std::cout<<BMID[(((st+en)/2)+len_right)].location<<std::endl;*/
+
+
+			foutfile<<"\t";
+			//foutfile<<BMID[st+len_left+len_right-1].location;
+			foutfile<<BMID[(((st+en)/2)+len_right)].location;
+		}
+	else
+		{//don't write to files these below stmts
+		/*std::cout<<BMID[st].location<<std::endl;
+					std::cout<<BMID[en].location<<std::endl;
+
+					std::cout<<BMID[((st+en)/2)-len_left + 1].location<<std::endl;
+					std::cout<<BMID[(((st+en)/2)+len_right)].location<<std::endl;*/
+			foutfile<<"\t";
+			foutfile<<"NA";
+			foutfile<<"\t";
+			foutfile<<"NA";
+		}
 }
-else
-{
-	foutfile<<"\t";
-	foutfile<<"NA";
-	foutfile<<"\t";
-	foutfile<<"NA";
-}
-}
+
 
 void Compute::calculate(HandleFlags hf,ReadFiles rf)
 {
+	unsigned long long back = 0;	//Look the Previous value from current
+	unsigned long long front = 0;	//Look the Forth value fro current
+	if (!issilent){
 	std::cout<<"Computing..."<<std::endl;
-	unsigned long long atmostdnalength = (PED[0].dnasequence.length() - 1)/2;	//Length of the dna sequence
+	}
+	unsigned long long atmostdnalength = (PED[0].dnasequence.length())/2;	//Length of the dna sequence
 
 	//sentinent check
 	if (atmostdnalength!= BMID.size())
@@ -761,38 +903,142 @@ void Compute::calculate(HandleFlags hf,ReadFiles rf)
 	unsigned long long i = 0;
 	for (i = 0; i< IBD.size();i++ )
 		{
-			//std::cout<<i<<std::endl;
+			unsigned long long j;
+			//std::cout<<"i= "<<i<<std::endl;
 			//unsigned long long error = 0;	//	hold calculated error value
+			if(IBD[i].begin > IBD[i].end)	//if start is greater than end than just continue
+			{
+				continue;
+			}
 			foutfile<<IBD[i].person1<<"\t"<<IBD[i].person2<<"\t"<<IBD[i].begin<<"\t"<<IBD[i].end<<"\t";	//	First 4 columns
-			unsigned long long st,en;
-			st = en = 0;
-			for (unsigned long long j = 0 ; j < BMID.size(); j++  )
-				{
-					//std::cout<<BMID[j].location<<"\t"<<IBD[i].begin<<"\t"<<IBD[i].end<<std::endl;
+			unsigned long long st=0,en=0;
+			int ss_flag = 0;//if special cases satisfies avoid looking in the for loop
+			bool startf=true,stopf=true;
+			/*Special cases*/
+			//start is less than the BSID MARKER
 
-					if (BMID[j].location == IBD[i].begin)
-						{
-							st = BMID[j].lineno;		//st is the line number of the bmid file assuming ofcourse the line number begins at 0 instead of 1
-						}
-					if (BMID[j].location == IBD[i].end)
-						{
-							en = BMID[j].lineno;
-							break;
-						}
+
+
+			if (IBD[i].begin < BMID[0].location)
+				{
+					st = BMID[0].lineno;
+					startf = false;
 				}
+
+			else if (IBD[i].begin > BMID[BMID.size()-1].location )
+				{
+					st = BMID[BMID.size()-1].lineno; //Its correct if start is more than the marker size assign it the largest of the BMID marker size; same as end
+					startf = false;
+				}
+			for (j = 0 ; j < BMID.size(); j++  )
+				{
+				 if (startf)
+					{
+						if ((BMID[j].location == IBD[i].begin) || (BMID[j].location > IBD[i].begin))
+							{
+								if (j == 0 )
+									{
+										st = BMID[j].lineno;
+										startf = false;
+									}
+								else
+									{
+										if ((abs(BMID[j].location - IBD[i].begin)) < (abs(BMID[j-1].location - IBD[i].begin)))
+											{
+												st = BMID[j].lineno;
+												startf = false;
+											}
+										else
+											{
+												st = BMID[j-1].lineno;
+												startf = false;
+											}
+									}
+										//st is the line number of the bmid file assuming ofcourse the line number begins at 0 instead of 1
+							}
+					}
+				 else
+					 break;
+				}
+
+			if (IBD[i].end < BMID[0].location)	//if the end location of the IBD is before the start of marker, assign tit to the 2nd marker
+				{
+					en = BMID[1].lineno;
+					stopf = false;
+					//ss_flag++;
+					//startf = true;
+					//stopf = false;
+				}
+			else if (IBD[i].end > BMID[BMID.size()-1].location)	//problem here
+				{
+					en = BMID[BMID.size()-1].lineno;//""
+					stopf = false;
+					//ss_flag++;
+					//startf = true;
+					//stopf = false;
+				}
+
+			for (j = 0 ; j < BMID.size(); j++  )
+				{
+				if (stopf)
+					{
+						if ((BMID[j].location == IBD[i].end) || (BMID[j].location > IBD[i].end))
+						{
+
+							if (j == 0 )
+								{
+									en = BMID[j].lineno;
+									stopf = false;
+									//break;
+								}
+							else
+							{
+
+
+								if ((abs(BMID[j].location - IBD[i].end)) < (abs(BMID[j-1].location - IBD[i].end)))
+								{
+									en = BMID[j].lineno;
+									stopf = false;
+									//break;
+								}
+								else
+								{
+									en = BMID[j-1].lineno;
+									stopf = false;
+									//break;
+								}//st is the line number of the bmid file assuming ofcourse the line number begins at 0 instead of 1
+							}
+						}
+					}
+				else
+					break;
+
+				}
+			if (en == 0)
+			{
+				en = en +1;	//start and end cannot be 0
+			}
 
 			//std::cout<<"st = "<<st<<"\t"<<"en = "<<en<<std::endl;
 			std::string tofind = IBD[i].person1;
 			compute_ma_ie(i,st,en,hf.getwindowsize(),atmostdnalength,IBD[i].person1,IBD[i].person2);
 
+			if (!isreduced)
+			{
 			compute_ma_het(i,st,en,hf.getwindowsize(),atmostdnalength,tofind);	//het1
 			tofind = IBD[i].person2;
 			compute_ma_het(i,st,en,hf.getwindowsize(),atmostdnalength,tofind);	//het2
 			compute_ma_nm(i,st,en,hf.getwindowsize(),atmostdnalength,IBD[i].person1,IBD[i].person2);	//compute ma_nm
-
-			compute_trim_ie(hf.gettrimvalue());	//compute the trimming with the trim flag
-			compute_left_right(st,en);
-			compute_pie_trim();
+			}
+			//compute_trim_ie(hf.gettrimvalue());	//compute the trimming with the trim flag
+			//compute_left_right(st,en);
+			//compute_pie_trim();
+			compute_trim_ie2(hf.gettrimvalue());
+			compute_left_right2(st,en);
+			if (!isreduced)
+			{
+				compute_pie_trim2();
+			}
 			nomatchestrim = false;
 			len_left = 0;	//reinitialize to 0
 			len_right = 0;	//reinitialize to 0
@@ -800,10 +1046,17 @@ void Compute::calculate(HandleFlags hf,ReadFiles rf)
 			trim_ie.clear();
 			foutfile.flush();
 			foutfile<<"\n";
-			std::cout<<"\rPercentage completed:\t"<<	(i/double(IBD.size()))*(100.0) ;
+			//std::cout<<"\rPercentage completed:\t"<<	(i/double(IBD.size()))*(100.0) ;
 			std::cout.flush();
+			if (!issilent){
+			std::cout<<"Percentage completed:\t"<<	(i/double(IBD.size()))*(100.0)<<std::endl;
+			}
 		}
-	std::cout<<"\rPercentage completed:\t"<<	(i/double(IBD.size()))*(100.0)<<std::endl;
+	if (!issilent){
+	std::cout<<"Percentage completed:\t"<<	(i/double(IBD.size()))*(100.0)<<std::endl;
+	}
 	foutfile.close();
+	if (!issilent){
 	std::cout<<"Execution completed."<<std::endl;
+	}
 }
