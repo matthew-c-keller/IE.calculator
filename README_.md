@@ -10,13 +10,17 @@ There are the following flags in operation:
 The above file extention must end with .ibd,.bmid,.ped for sanity usuage purpose.
 
 4. -window  :indicates the size of the window attribute.       
-5. -trim :indicates the trimming value.         
-6. -out : The name of the output file.
+5. -emp_ma_threshold :indicates the trimming value.         
+6. -out :The name of the output file.
 
 
 All the 6 flags must be used. 
   
-./IeCalculator -ped ./src/FISHRB_Test1.ped -bmid ./src/FISHRB_Test1.bmid -ibd ./src/FISHRB_Test1.ibd -trim 0.5   -window 5   -out ibd_1_output.txt
+./IeCalculator -ped ./src/small.ped -bmid ./src/small.bmid -ibd ./src/small.ibd -emp_ma_threshold 0.5 -reduced -window 5 -out small.txts
+
+OPTIONAL FLAGS:
+7. -reduced  :Outputs Columns 1-5,13-15
+
 
 
 The file outputs 8 columns 
